@@ -5,7 +5,10 @@ const CHAVE_DB = 'loja_armas_db';
 function iniciarMock() {
     if (!localStorage.getItem(CHAVE_DB)) {
         const mockData = [
-            { id: Date.now().toString(), nome: 'Excalibur', tipo: 'espada', dano: 99 }
+            { id: Date.now().toString(),       nome: 'Martelo Chamado Palha', tipo: 'martelo', dano: 87 },
+            { id: (Date.now()+1).toString(),   nome: 'Lâmina Simorgh',        tipo: 'espada',  dano: 72 },
+            { id: (Date.now()+2).toString(),   nome: 'Gancho das Entranhas',  tipo: 'foice',   dano: 95 },
+            { id: (Date.now()+3).toString(),   nome: 'Lança do Atoleiro',     tipo: 'lanca',   dano: 64 },
         ];
         localStorage.setItem(CHAVE_DB, JSON.stringify(mockData));
     }

@@ -1,0 +1,71 @@
+/* Tema Dark Mode base e fonte Retrô/Terminal */
+body {
+    margin: 0;
+    font-family: 'Courier New', Courier, monospace;
+    background-color: #000;
+}
+
+/* Painel flutuante da interface*/
+#ui-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+    background: rgba(20, 20, 20, 0.9);
+    border: 3px solid #ff4757;
+    padding: 20px;
+    color: #ff4757;
+    border-radius: 4px;
+    box-shadow: 4px 4px 0px #ff4757;
+    width: 280px;
+}
+
+h2 {
+    margin-top: 0;
+    font-size: 1.4rem;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 0px #000;
+    border-bottom: 2px dashed #555;
+    padding-bottom: 10px;
+}
+
+input, select {
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #111;
+    color: #fff;
+    border: 2px solid #555;
+    font-family: 'Courier New', Courier, monospace;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #ff4757;
+}
+
+/* Botão de Ação com efeito de clique */
+button {
+    width: 100%;
+    padding: 12px;
+    background: #ff4757;
+    color: #fff;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-family: 'Courier New', Courier, monospace;
+    box-shadow: 3px 3px 0px #aa2e38;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+button:hover {
+    background: #ff6b81;
+}
+
+button:active {
+    transform: translate(3px, 3px);
+    box-shadow: none;
+}

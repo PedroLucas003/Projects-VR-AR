@@ -43,7 +43,14 @@
         </div>
     </div>
 
-    <div id="dica-interacao">Clique em uma arma na cena para editar ou deletar</div>
+    <div id="hud-mao">
+        <div class="hud-mao-kicker">Em punho</div>
+        <div id="hud-mao-nome">—</div>
+        <div id="hud-mao-meta"></div>
+        <button type="button" id="btnDevolver">Devolver à vitrine <span>Q</span></button>
+    </div>
+
+    <div id="dica-interacao">WASD para andar · clique numa arma para pega-la · Q para devolver</div>
 
     <a-scene fog="type: linear; color: #0a0806; near: 8; far: 25">
 
@@ -97,8 +104,13 @@
 
         <a-entity id="vitrine-armas" position="0 0.8 -4.2"></a-entity>
 
-        <a-camera position="0 1.6 1.5" look-controls="magicWindowTrackingEnabled: false">
+        <a-camera id="camera-jogador" position="0 1.6 1.5"
+            camera="fov: 75; near: 0.08; far: 10000"
+            look-controls="magicWindowTrackingEnabled: false"
+            wasd-controls="fly: false; acceleration: 28">
             <a-cursor color="#c8860a" fuse="false" raycaster="objects: .interativel" material="opacity: 0.7"></a-cursor>
+            <a-light type="point" color="#d4a070" intensity="0.55" distance="2.5" position="0.08 0.12 0.2"></a-light>
+            <a-entity id="bracos-personagem"></a-entity>
         </a-camera>
 
     </a-scene>

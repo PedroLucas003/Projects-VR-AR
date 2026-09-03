@@ -8,6 +8,49 @@ const btnVerb     = document.getElementById('btnVerb');
 const btnCancelar = document.getElementById('btnCancelar');
 const listaEl     = document.getElementById('lista-armas');
 const contadorEl  = document.getElementById('contador-armas');
+const hudMao      = document.getElementById('hud-mao');
+const hudNome     = document.getElementById('hud-mao-nome');
+const hudMeta     = document.getElementById('hud-mao-meta');
+const btnDevolver = document.getElementById('btnDevolver');
+const dicaEl      = document.getElementById('dica-interacao');
+
+let armaEquipadaId = null;
+
+const DICA_LIVRE  = 'WASD para andar · clique numa arma para pega-la · Q para devolver';
+const DICA_PUNHO  = 'Arma em punho · Q ou o botao para devolver a vitrine';
+
+// Porta = onde a arma senta na camera (sem depender dos bracos).
+// Cada tipo ocupa um canto/angulo diferente da tela.
+const EMPUNHADURA = {
+    espada: {
+        maos: 1,
+        porta: { position: '0.40 -0.06 -0.52', rotation: '6 -32 4' },
+        scale: 0.30,
+        grip:  { x: 0, y: 0.05, z: 0 },
+        grip2: null
+    },
+    martelo: {
+        maos: 2,
+        porta: { position: '0.32 -0.10 -0.55', rotation: '10 40 -8' },
+        scale: 0.22,
+        grip:  { x: 0, y: -0.10, z: 0 },
+        grip2: { x: 0, y: -0.32, z: 0 }
+    },
+    foice: {
+        maos: 2,
+        porta: { position: '0.20 -0.10 -0.52', rotation: '-18 72 -12' },
+        scale: 0.24,
+        grip:  { x: 0, y: -0.10, z: 0 },
+        grip2: { x: 0, y: 0.40, z: 0 }
+    },
+    lanca: {
+        maos: 2,
+        porta: { position: '0.36 -0.16 -0.50', rotation: '-52 22 6' },
+        scale: 0.22,
+        grip:  { x: 0, y: -0.35, z: 0 },
+        grip2: { x: 0, y: 0.40, z: 0 }
+    }
+};
 
 // ─── Paleta dark fantasy por tipo ───────────────────────
 const TEMAS = {
@@ -163,6 +206,146 @@ function criarLanca(t) {
     return g;
 }
 
+function criarGeoArma(tipo) {
+    const t = TEMAS[tipo] || TEMAS.espada;
+    if (tipo === 'espada')  return criarEspada(t);
+    if (tipo === 'martelo') return criarMartelo(t);
+    if (tipo === 'foice')   return criarFoice(t);
+    if (tipo === 'lanca')   return criarLanca(t);
+    return criarEspada(t);
+}
+
+// ─── Viewmodel: so a arma, angulo por tipo ──────────────
+
+function montarPersonagem() {
+    const raiz = document.getElementById('bracos-personagem');
+    if (!raiz || raiz.childElementCount) return;
+    const porta = document.createElement('a-entity');
+    porta.setAttribute('id', 'porta-arma');
+    porta.setAttribute('visible', 'false');
+    raiz.appendChild(porta);
+}
+
+function setPose(el, pose) {
+    if (!el || !pose) return;
+    el.removeAttribute('animation__pos');
+    el.removeAttribute('animation__rot');
+    el.setAttribute('position', pose.position);
+    el.setAttribute('rotation', pose.rotation);
+}
+
+function esconderViewmodel() {
+    const porta = document.getElementById('porta-arma');
+    if (porta) porta.setAttribute('visible', 'false');
+    pararBalanceio();
+}
+
+function iniciarBalanceio() {
+    const raiz = document.getElementById('bracos-personagem');
+    if (!raiz) return;
+    raiz.removeAttribute('animation__bob');
+    raiz.setAttribute('position', '0 0 0');
+    raiz.setAttribute('animation__bob',
+        'property: position; from: 0 -0.016 0; to: 0 0.016 0; dir: alternate; dur: 1700; easing: easeInOutSine; loop: true');
+}
+
+function pararBalanceio() {
+    const raiz = document.getElementById('bracos-personagem');
+    if (!raiz) return;
+    raiz.removeAttribute('animation__bob');
+    raiz.setAttribute('position', '0 0 0');
+}
+
+function slotVitrine(id) {
+    const grupo = vitrine.querySelector(`[data-arma-id="${id}"]`);
+    return grupo ? grupo.parentElement : null;
+}
+
+function setSlotVitrine(id, visivel) {
+    const slot = slotVitrine(id);
+    if (slot) slot.setAttribute('visible', visivel ? 'true' : 'false');
+}
+
+function limparMao() {
+    const antiga = document.getElementById('arma-equipada');
+    if (antiga) antiga.remove();
+}
+
+function montarArmaNaMao(arma) {
+    limparMao();
+    const porta = document.getElementById('porta-arma');
+    if (!porta) return;
+
+    const pose = EMPUNHADURA[arma.tipo] || EMPUNHADURA.espada;
+    const s = pose.scale;
+    const g = pose.grip;
+
+    porta.setAttribute('visible', 'true');
+    setPose(porta, pose.porta);
+
+    const held = document.createElement('a-entity');
+    held.setAttribute('id', 'arma-equipada');
+    held.setAttribute('position', `${-g.x * s} ${-g.y * s} ${-g.z * s}`);
+    held.setAttribute('scale', `${s} ${s} ${s}`);
+    held.appendChild(criarGeoArma(arma.tipo));
+    porta.appendChild(held);
+
+    iniciarBalanceio();
+}
+
+function atualizarHudMao(arma) {
+    if (!arma) {
+        hudMao.classList.remove('visivel');
+        dicaEl.textContent = DICA_LIVRE;
+        return;
+    }
+    const t = TEMAS[arma.tipo] || TEMAS.espada;
+    const pose = EMPUNHADURA[arma.tipo] || EMPUNHADURA.espada;
+    const maos = pose.maos === 1 ? 'uma mao' : 'duas maos';
+    hudNome.textContent = arma.nome;
+    hudMeta.textContent = `${t.label}  ·  ${arma.dano} dmg  ·  ${maos}`;
+    hudMao.classList.add('visivel');
+    dicaEl.textContent = DICA_PUNHO;
+}
+
+function pegarArma(arma) {
+    if (!arma) return;
+    if (armaEquipadaId === arma.id) return;
+
+    if (armaEquipadaId) setSlotVitrine(armaEquipadaId, true);
+
+    armaEquipadaId = arma.id;
+    setSlotVitrine(arma.id, false);
+    montarArmaNaMao(arma);
+    atualizarHudMao(arma);
+    renderizarLista(lerArmas());
+}
+
+function soltarArma() {
+    if (!armaEquipadaId) return;
+    setSlotVitrine(armaEquipadaId, true);
+    armaEquipadaId = null;
+    limparMao();
+    esconderViewmodel();
+    atualizarHudMao(null);
+    renderizarLista(lerArmas());
+}
+
+function sincronizarMao() {
+    if (!armaEquipadaId) return;
+    const arma = lerArmas().find(a => a.id === armaEquipadaId);
+    if (!arma) {
+        armaEquipadaId = null;
+        limparMao();
+        esconderViewmodel();
+        atualizarHudMao(null);
+        return;
+    }
+    setSlotVitrine(arma.id, false);
+    montarArmaNaMao(arma);
+    atualizarHudMao(arma);
+}
+
 // ─── Montar entidade completa na cena ───────────────────
 
 function criarEntidadeArma(arma, posX) {
@@ -179,14 +362,7 @@ function criarEntidadeArma(arma, posX) {
     grupo.setAttribute('animation__rot',
         'property: rotation; from: 0 -20 0; to: 0 20 0; dir: alternate; dur: 5000; easing: easeInOutSine; loop: true');
 
-    let geo;
-    if (arma.tipo === 'espada')  geo = criarEspada(t);
-    if (arma.tipo === 'martelo') geo = criarMartelo(t);
-    if (arma.tipo === 'foice')   geo = criarFoice(t);
-    if (arma.tipo === 'lanca')   geo = criarLanca(t);
-    if (!geo) geo = criarEspada(t);
-
-    grupo.appendChild(geo);
+    grupo.appendChild(criarGeoArma(arma.tipo));
 
     const pool = document.createElement('a-circle');
     pool.setAttribute('position', '0 -0.82 0');
@@ -219,14 +395,22 @@ function criarEntidadeArma(arma, posX) {
     textoTipo.setAttribute('width', '2.0');
     grupo.appendChild(textoTipo);
 
-    // Guarda o id no elemento e busca a armado localStorage no click
+    // Guarda o id no elemento e busca a arma do localStorage no click
     // evita problema de referência capturada pelo closure
     grupo.dataset.armaId = arma.id;
     grupo.addEventListener('click', e => {
         e.stopPropagation();
         const id = e.currentTarget.dataset.armaId;
         const armaAtual = lerArmas().find(a => a.id === id);
-        if (armaAtual) fillForm(armaAtual);
+        if (armaAtual) pegarArma(armaAtual);
+    });
+    grupo.addEventListener('mouseenter', () => {
+        const cursor = document.querySelector('a-cursor');
+        if (cursor) cursor.setAttribute('color', '#e8c040');
+    });
+    grupo.addEventListener('mouseleave', () => {
+        const cursor = document.querySelector('a-cursor');
+        if (cursor) cursor.setAttribute('color', '#c8860a');
     });
 
     wrapper.appendChild(grupo);
@@ -247,6 +431,7 @@ function renderizarCena() {
     });
 
     renderizarLista(armas);
+    sincronizarMao();
 }
 
 // ─── Lista 2D no painel ─────────────────────────────────
@@ -265,9 +450,11 @@ function renderizarLista(armas) {
         const t    = TEMAS[arma.tipo] || TEMAS.espada;
         const item = document.createElement('div');
         item.className = 'lista-item';
+        const emPunho = arma.id === armaEquipadaId;
+        if (emPunho) item.classList.add('em-punho');
         item.innerHTML = `
             <div class="lista-item-info">
-                <div class="lista-item-nome">${arma.nome}</div>
+                <div class="lista-item-nome">${arma.nome}${emPunho ? '<span class="lista-item-badge">EM PUNHO</span>' : ''}</div>
                 <div class="lista-item-meta">${t.label}</div>
             </div>
             <div class="lista-item-dano">${arma.dano} dmg</div>
@@ -276,6 +463,10 @@ function renderizarLista(armas) {
                 <button class="btn-del"  title="Deletar">✕</button>
             </div>`;
 
+        item.addEventListener('click', () => {
+            if (armaEquipadaId === arma.id) soltarArma();
+            else pegarArma(arma);
+        });
         item.querySelector('.btn-edit').addEventListener('click', e => {
             e.stopPropagation();
             fillForm(arma);
@@ -283,6 +474,7 @@ function renderizarLista(armas) {
         item.querySelector('.btn-del').addEventListener('click', e => {
             e.stopPropagation();
             if (confirm(`Destruir "${arma.nome}"?`)) {
+                if (armaEquipadaId === arma.id) soltarArma();
                 deletarArma(arma.id); // DELETE
                 renderizarCena();
             }
@@ -331,5 +523,39 @@ formArma.addEventListener('submit', e => {
 
 btnCancelar.addEventListener('click', resetForm);
 
+btnDevolver.addEventListener('click', soltarArma);
+
+window.addEventListener('keydown', e => {
+    if (e.target.matches('input, select, textarea')) return;
+    if (e.key === 'q' || e.key === 'Q') soltarArma();
+});
+
+function setMovimento(ligado) {
+    const cam = document.getElementById('camera-jogador');
+    if (cam) cam.setAttribute('wasd-controls', 'enabled', ligado);
+}
+
+document.querySelectorAll('#ui-container input, #ui-container select, #ui-container textarea').forEach(el => {
+    el.addEventListener('focus', () => setMovimento(false));
+    el.addEventListener('blur',  () => setMovimento(true));
+});
+
+AFRAME.registerComponent('limites-loja', {
+    tick: function () {
+        const p = this.el.object3D.position;
+        p.x = Math.max(-9.5, Math.min(9.5, p.x));
+        p.z = Math.max(-7.5, Math.min(4.5, p.z));
+        p.y = 1.6;
+    }
+});
+
 // ─── INIT ────────────────────────────────────────────────
-renderizarCena();
+function iniciarCena() {
+    montarPersonagem();
+    document.getElementById('camera-jogador').setAttribute('limites-loja', '');
+    renderizarCena();
+}
+
+const sceneEl = document.querySelector('a-scene');
+if (sceneEl.hasLoaded) iniciarCena();
+else sceneEl.addEventListener('loaded', iniciarCena);

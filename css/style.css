@@ -269,6 +269,9 @@ select {
     text-overflow: ellipsis;
     margin-bottom: 2px;
     font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .lista-item-meta {
@@ -300,6 +303,92 @@ select {
 .btn-edit:hover { background: rgba(107,88,56,0.2); color: var(--bone); }
 .btn-del { color: var(--blood-bright); border-color: var(--blood); }
 .btn-del:hover { background: rgba(122,26,26,0.2); }
+
+/* ── HUD arma em punho ── */
+#hud-mao {
+    display: none;
+    position: absolute;
+    bottom: 56px;
+    right: 16px;
+    z-index: 100;
+    width: 230px;
+    background: rgba(10, 7, 4, 0.96);
+    border: 1px solid var(--border-main);
+    border-top: 2px solid var(--amber);
+    padding: 14px 14px 12px;
+    box-shadow: 4px 4px 20px rgba(0,0,0,0.8);
+    animation: panelIn 0.35s ease both;
+}
+
+#hud-mao.visivel { display: block; }
+
+.hud-mao-kicker {
+    font-size: 0.52rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--amber-dim);
+    margin-bottom: 4px;
+}
+
+#hud-mao-nome {
+    font-size: 0.88rem;
+    font-style: italic;
+    color: var(--amber);
+    margin-bottom: 4px;
+}
+
+#hud-mao-meta {
+    font-size: 0.58rem;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+}
+
+#btnDevolver {
+    width: 100%;
+    padding: 8px 10px;
+    background: transparent;
+    color: var(--bone);
+    border: 1px solid var(--border-glow);
+    font-family: var(--font-serif);
+    font-size: 0.65rem;
+    font-style: italic;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+#btnDevolver:hover {
+    background: rgba(200, 134, 10, 0.12);
+    border-color: var(--amber);
+    color: var(--amber);
+}
+
+#btnDevolver span {
+    font-family: 'Courier New', monospace;
+    font-style: normal;
+    font-size: 0.5rem;
+    letter-spacing: 0.08em;
+    padding: 1px 5px;
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+}
+
+.lista-item.em-punho {
+    border-left-color: var(--amber);
+    background: rgba(40, 28, 10, 0.95);
+}
+
+.lista-item-badge {
+    font-size: 0.45rem;
+    letter-spacing: 0.08em;
+    color: var(--amber);
+    border: 1px solid var(--amber-dim);
+    padding: 1px 5px;
+    margin-left: 4px;
+    white-space: nowrap;
+}
 
 /* ── Dica ── */
 #dica-interacao {
